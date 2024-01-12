@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# OPTIONS_GHC -fplugin=LiquidHaskell #-}
 
 {- |
 Copyright : Flipstone Technology Partners 2023
@@ -39,10 +40,13 @@ module Orville.PostgreSQL.Expr.WhereClause
 where
 
 import qualified Data.List.NonEmpty as NE
+import Data.Set -- TODO: Only needed for LH specifications
 
 import Orville.PostgreSQL.Expr.BinaryOperator (andOp, binaryOpExpression, equalsOp, greaterThanOp, greaterThanOrEqualsOp, iLikeOp, lessThanOp, lessThanOrEqualsOp, likeOp, notEqualsOp, orOp)
 import Orville.PostgreSQL.Expr.ValueExpression (ValueExpression, rowValueConstructor)
 import qualified Orville.PostgreSQL.Raw.RawSql as RawSql
+
+{-@ measure beColumnNames :: BooleanExpr -> Data.Set.Internal.Set String @-}
 
 {- |
 Type to represent a @WHERE@ clause restriction on a @SELECT@, @UPDATE@ or

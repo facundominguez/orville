@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fplugin=LiquidHaskell #-}
 
 {- |
 Copyright : Flipstone Technology Partners 2023
@@ -112,6 +113,8 @@ import qualified Orville.PostgreSQL.Marshall.SqlType as SqlType
 import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import qualified Orville.PostgreSQL.Schema.ConstraintDefinition as ConstraintDefinition
 import qualified Orville.PostgreSQL.Schema.TableIdentifier as TableIdentifier
+
+{-@ measure fdName :: FieldDefinition n f -> String @-}
 
 {- |
   'FieldDefinition' determines the SQL construction of a column in the
@@ -457,6 +460,10 @@ data NotNull
 -}
 data Nullable
 
+{-@
+assume integerField :: n:String -> {v:_ | fdName v == n }
+@-}
+
 {- |
   Builds a 'FieldDefinition' that stores Haskell 'Int32' values as the
   PostgreSQL "INT" type.
@@ -542,6 +549,10 @@ booleanField ::
   String ->
   FieldDefinition NotNull Bool
 booleanField = fieldOfType SqlType.boolean
+
+{-@
+assume unboundedTextField :: n:String -> {v:_ | fdName v == n }
+@-}
 
 {- |
   Builds a 'FieldDefinition' that stores Haskell 'T.Text' values as the
@@ -907,6 +918,10 @@ fieldGreaterThan =
 (.>) = fieldGreaterThan
 
 infixl 9 .>
+
+{-@
+assume fieldLessThan :: fd:_ -> a -> {v:_ | beColumnNames v == Set_sng (fdName fd) }
+@-}
 
 {- |
   Checks that the value in a field is less than a particular value.

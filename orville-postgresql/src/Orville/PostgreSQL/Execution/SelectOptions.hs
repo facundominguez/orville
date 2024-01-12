@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fplugin=LiquidHaskell #-}
 {- |
 Copyright : Flipstone Technology Partners 2023
 License   : MIT
@@ -26,8 +27,11 @@ module Orville.PostgreSQL.Execution.SelectOptions
 where
 
 import Data.Monoid (First (First, getFirst))
+import Data.Set -- TODO: Only needed for LH specifications
 
 import qualified Orville.PostgreSQL.Expr as Expr
+
+{-@ measure soColumnNames :: SelectOptions -> Data.Set.Internal.Set String @-}
 
 {- |
    A 'SelectOptions' is a set of options that can be used to change the way
@@ -170,6 +174,10 @@ selectLimitExpr =
 selectOffsetExpr :: SelectOptions -> Maybe Expr.OffsetExpr
 selectOffsetExpr =
   getFirst . i_offsetExpr
+
+{-@
+where_ :: be:_ -> {v:_| soColumnNames v == beColumnNames be }
+@-}
 
 {- |
   Constructs a 'SelectOptions' with just the given 'Expr.BooleanExpr'.

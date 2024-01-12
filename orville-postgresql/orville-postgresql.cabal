@@ -28,6 +28,11 @@ flag ci
   manual: True
   default: False
 
+flag liquidhaskell
+  description: enable validation with Liquid Haskell
+  manual: True
+  default: False
+
 library
   exposed-modules:
       Orville.PostgreSQL
@@ -161,6 +166,25 @@ library
     ghc-options: -Wall -Werror -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-patterns -Wincomplete-record-updates -Wmissing-local-signatures -Wmissing-export-lists -Wmissing-import-lists -Wnoncanonical-monad-instances -Wredundant-constraints -Wpartial-fields -Wmissed-specialisations -Wno-implicit-prelude -Wno-safe -Wno-unsafe
   else
     ghc-options: -Wall -fwarn-incomplete-uni-patterns -fwarn-incomplete-record-updates
+  if flag(liquidhaskell) && impl(ghc == 9.4.7)
+    build-depends: liquidhaskell
+    -- Collect spec annotations but don't verify the modules
+    ghc-options: -fplugin-opt=LiquidHaskell:--compile-spec
+
+executable colref-error
+  hs-source-dirs: lh-example
+  main-is: ColumnReferenceError.hs
+  default-language: Haskell2010
+  build-depends:
+      base
+    , orville-postgresql
+    , text
+  if flag(liquidhaskell) && impl(ghc == 9.4.7)
+    build-depends: liquidhaskell
+    -- No need to check totality or termination
+    ghc-options: -fplugin-opt=LiquidHaskell:--no-totality -fplugin-opt=LiquidHaskell:--no-termination
+  else
+    buildable: False
 
 test-suite spec
   type: exitcode-stdio-1.0

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fplugin=LiquidHaskell #-}
 {- |
 Copyright : Flipstone Technology Partners 2023
 License   : MIT
@@ -352,6 +353,11 @@ deleteAndReturnEntities ::
 deleteAndReturnEntities entityTable whereCondition =
   Delete.executeDeleteReturnEntities $
     Delete.deleteFromTableReturning entityTable whereCondition
+
+{-@
+assume findEntitiesBy ::
+  td:_ -> {so:_ | Set_sub (soColumnNames so) (tdColumnNames td) } -> {v:_ | true}
+@-}
 
 {- |
   Finds all the entities in the given table according to the specified

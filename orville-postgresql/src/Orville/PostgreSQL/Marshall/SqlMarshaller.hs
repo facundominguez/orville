@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -fplugin=LiquidHaskell #-}
 
 {- |
 Copyright : Flipstone Technology Partners 2023
@@ -66,6 +67,8 @@ import qualified Orville.PostgreSQL.Marshall.MarshallError as MarshallError
 import Orville.PostgreSQL.Marshall.SyntheticField (SyntheticField, nullableSyntheticField, prefixSyntheticField, syntheticFieldAlias, syntheticFieldExpression, syntheticFieldValueFromSqlValue)
 import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import qualified Orville.PostgreSQL.Schema.ConstraintDefinition as ConstraintDefinition
+
+{-@ measure smColumnNames :: SqlMarshaller w r -> Data.Set.Internal.Set String @-}
 
 {- |
   An 'AnnotatedSqlMarshaller' is a 'SqlMarshaller' that contains extra
@@ -163,6 +166,26 @@ instance Functor (SqlMarshaller a) where
 instance Applicative (SqlMarshaller a) where
   pure = MarshallPure
   (<*>) = MarshallApply
+
+{-@
+instance Functor (SqlMarshaller w) where
+  fmap ::
+    (a -> b) ->
+    a:SqlMarshaller w a ->
+    {v:SqlMarshaller w b | smColumnNames v == smColumnNames a}
+
+
+// TODO: LH fails to pick up the specs for <*>
+
+instance Applicative (SqlMarshaller w) where
+  pure :: a -> {v:SqlMarshaller w a| Set_emp (smColumnNames v)}
+  (<*>) ::
+    smf:SqlMarshaller w (a -> b) ->
+    smx:SqlMarshaller w a ->
+    {v:SqlMarshaller w b
+    | smColumnNames v == Set_cup (smColumnNames smf) (smColumnNames smx)
+    }
+@-}
 
 {- |
   Returns a list of 'Expr.DerivedColumn' expressions that can be used in a
@@ -767,6 +790,15 @@ mkRowIdentityExtractor fields result =
         pure []
       Just maxColumn ->
         fmap catMaybes $ traverse getIdentityValue [Column 0 .. maxColumn]
+
+{-@
+assume marshallField ::
+  (writeEntity -> fieldValue) ->
+  fd:FieldDefinition nullability fieldValue ->
+  {v:SqlMarshaller writeEntity fieldValue
+  | smColumnNames v == Set_sng (fdName fd)
+  }
+@-}
 
 {- |
   Builds a 'SqlMarshaller' that maps a single field of a Haskell entity to

@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -fplugin=LiquidHaskell #-}
 
 {- |
 Copyright : Flipstone Technology Partners 2023
@@ -49,6 +50,8 @@ import Orville.PostgreSQL.Raw.SqlValue (SqlValue)
 import Orville.PostgreSQL.Schema.ConstraintDefinition (ConstraintDefinition, TableConstraints, addConstraint, constraintSqlExpr, emptyTableConstraints, tableConstraintDefinitions)
 import Orville.PostgreSQL.Schema.PrimaryKey (PrimaryKey, mkPrimaryKeyExpr, primaryKeyFieldNames)
 import Orville.PostgreSQL.Schema.TableIdentifier (TableIdentifier, setTableIdSchema, tableIdQualifiedName, unqualifiedNameToTableId)
+
+{-@ measure tdColumnNames :: TableDefinition k w r -> Data.Set.Internal.Set String @-}
 
 {- |
   Contains the definition of a SQL table for Orville to use for generating
@@ -103,6 +106,16 @@ data NoKey
 data TablePrimaryKey key where
   TableHasKey :: PrimaryKey keyType -> TablePrimaryKey (HasKey keyType)
   TableHasNoKey :: TablePrimaryKey NoKey
+
+{-@
+assume mkTableDefinition ::
+  String ->
+  PrimaryKey key ->
+  sm:SqlMarshaller writeEntity readEntity ->
+  {v:TableDefinition (HasKey key) writeEntity readEntity
+  | tdColumnNames v == smColumnNames sm
+  }
+@-}
 
 {- |
   Constructs a new 'TableDefinition' with the basic fields required for
